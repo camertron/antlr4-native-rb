@@ -2,6 +2,10 @@ require 'fileutils'
 
 module Antlr4Native
   class Generator
+    ANTLR_JAR = File.expand_path(
+      File.join('..', '..', 'vendor', 'antlr4-4.8-1-complete.jar'), __dir__
+    ).freeze
+
     include StringHelpers
 
     attr_reader :grammar_files, :output_dir, :parser_root_method
@@ -23,7 +27,7 @@ module Antlr4Native
       FileUtils.mkdir_p(antlrgen_dir)
 
       system(<<~END)
-        java -jar ~/.m2/repository/org/antlr/antlr4/4.7.3-SNAPSHOT/antlr4-4.7.3-SNAPSHOT-complete.jar \
+        java -jar #{ANTLR_JAR} \
           -o #{antlrgen_dir} \
           -Dlanguage=Cpp \
           -visitor \
@@ -93,7 +97,7 @@ module Antlr4Native
     def proxy_class_declarations
       @proxy_class_declarations ||= contexts
         .map { |ctx| "Class #{ctx.proxy_class_variable};" }
-        .concat(['Class rb_cParseTree;'])
+        .concat(['Class rb_cParser;', 'Class rb_cParseTree;'])
         .join("\n")
     end
 
@@ -176,6 +180,12 @@ module Antlr4Native
           CommonTokenStream* tokens;
           #{parser_ns}* parser;
         };
+
+        template <>
+        Object to_ruby<ParserProxy*>(ParserProxy* const &x) {
+          if (!x) return Nil;
+          return Data_Object<ParserProxy>(x, rb_cParser, nullptr, nullptr);
+        }
       END
     end
 
@@ -185,7 +195,7 @@ module Antlr4Native
         void Init_#{underscore(parser_ns)}() {
           Module rb_m#{parser_ns} = define_module("#{parser_ns}");
 
-          rb_m#{parser_ns}
+          rb_cParser = rb_m#{parser_ns}
             .define_class<ParserProxy>("Parser")
             .define_singleton_method("parse", &ParserProxy::parse)
             .define_singleton_method("parse_file", &ParserProxy::parseFile)
