@@ -33,7 +33,7 @@ module Antlr4Native
     end
 
     def fetches_token?
-      name.upcase == name
+      name[0].upcase == name[0]
     end
 
     def rule?

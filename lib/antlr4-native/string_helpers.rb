@@ -11,6 +11,10 @@ module Antlr4Native
         .gsub('-', '_')
         .downcase
     end
+
+    def dasherize(str)
+      underscore(str).gsub('_', '-')
+    end
   end
 
   StringHelpers.extend(StringHelpers)

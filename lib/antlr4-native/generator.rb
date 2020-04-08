@@ -2,6 +2,8 @@ require 'fileutils'
 
 module Antlr4Native
   class Generator
+    ANTLR_VERSION = '4.8'.freeze
+
     ANTLR_JAR = File.expand_path(
       File.join('..', '..', 'vendor', 'antlr4-4.8-1-complete.jar'), __dir__
     ).freeze
@@ -19,6 +21,26 @@ module Antlr4Native
     def generate
       generate_antlr_code
       write_interop_file
+    end
+
+    def gem_name
+      @gem_name ||= dasherize(parser_ns)
+    end
+
+    def antlr_ns
+      grammar_names['parser'] || grammar_names['default']
+    end
+
+    def parser_ns
+      @parser_ns ||= grammar_names['parser'] || "#{grammar_names['default']}Parser"
+    end
+
+    def lexer_ns
+      @lexer_ns ||= grammar_names['lexer'] || "#{grammar_names['default']}Lexer"
+    end
+
+    def ext_name
+      @ext_name ||= underscore(parser_ns)
     end
 
     private
@@ -66,6 +88,10 @@ module Antlr4Native
 
           tree::ParseTree* getOriginal() {
             return this -> orig;
+          }
+
+          std::string getText() {
+            return this -> orig -> getText();
           }
 
         protected:
@@ -192,7 +218,7 @@ module Antlr4Native
     def init_function
       <<~END
         extern "C"
-        void Init_#{underscore(parser_ns)}() {
+        void Init_#{ext_name}() {
           Module rb_m#{parser_ns} = define_module("#{parser_ns}");
 
           rb_cParser = rb_m#{parser_ns}
@@ -253,11 +279,11 @@ module Antlr4Native
     end
 
     def antlrgen_dir
-      @antlrgen_dir ||= File.join(output_dir, 'antlrgen')
+      @antlrgen_dir ||= File.join(output_dir, gem_name, 'antlrgen')
     end
 
     def interop_file
-      @interop_file ||= File.join(output_dir, "#{underscore(parser_ns)}.cpp")
+      @interop_file ||= File.join(output_dir, gem_name, "#{ext_name}.cpp")
     end
 
     def grammar_names
@@ -267,18 +293,6 @@ module Antlr4Native
           ret[kind&.strip || 'default'] = name
         end
       end
-    end
-
-    def antlr_ns
-      grammar_names['parser'] || grammar_names['default']
-    end
-
-    def parser_ns
-      @parser_ns ||= grammar_names['parser'] || "#{grammar_names['default']}Parser"
-    end
-
-    def lexer_ns
-      @lexer_ns ||= grammar_names['lexer'] || "#{grammar_names['default']}Lexer"
     end
 
     def cpp_parser_source

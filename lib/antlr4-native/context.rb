@@ -86,7 +86,8 @@ module Antlr4Native
           lines << ".define_method(\"#{underscore(ctx_method.cpp_name)}\", &#{name}Proxy::#{ctx_method.cpp_name})"
         end
 
-        lines[-1] << ';'
+        lines << ".define_method(\"text\", &#{name}Proxy::getText);"
+
         lines
       end
     end
