@@ -32,15 +32,23 @@ module Antlr4Native
       return_type.start_with?('std::vector')
     end
 
-    def fetches_token?
+    # @TODO: consider revising this
+    def context_method?
+      !token_method? &&
+        !rule_method? &&
+        !meta_method? &&
+        !constructor?
+    end
+
+    def token_method?
       name[0].upcase == name[0]
     end
 
-    def rule?
+    def rule_method?
       RULE_METHODS.include?(name)
     end
 
-    def meta?
+    def meta_method?
       META_METHODS.include?(name)
     end
 

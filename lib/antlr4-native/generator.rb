@@ -87,15 +87,52 @@ module Antlr4Native
           }
 
           tree::ParseTree* getOriginal() {
-            return this -> orig;
+            return orig;
           }
 
           std::string getText() {
-            return this -> orig -> getText();
+            return orig -> getText();
           }
 
+          Object getChildren() {
+            Array a;
+
+            if (orig != nullptr) {
+              for (auto it = orig -> children.begin(); it != orig -> children.end(); it ++) {
+                a.push(ContextProxy::wrapParseTree(*it));
+              }
+            }
+
+            return a;
+          }
+
+          Object getParent() {
+            if (orig == nullptr) {
+              return Qnil;
+            }
+
+            return ContextProxy::wrapParseTree(orig -> parent);
+          }
+
+          size_t childCount() {
+            if (orig == nullptr) {
+              return 0;
+            }
+
+            return orig -> children.size();
+          }
+
+        private:
+
+          static Object wrapParseTree(tree::ParseTree* node);
+
         protected:
-          tree::ParseTree* orig;
+          tree::ParseTree* orig = nullptr;
+        };
+
+        class TerminalNodeProxy : public ContextProxy {
+        public:
+          TerminalNodeProxy(tree::ParseTree* tree) : ContextProxy(tree) { }
         };
 
         #{proxy_class_headers}
@@ -110,6 +147,8 @@ module Antlr4Native
 
         #{parser_class}
 
+        #{context_proxy_methods}
+
         #{init_function}
       END
     end
@@ -123,7 +162,13 @@ module Antlr4Native
     def proxy_class_declarations
       @proxy_class_declarations ||= contexts
         .map { |ctx| "Class #{ctx.proxy_class_variable};" }
-        .concat(['Class rb_cParser;', 'Class rb_cParseTree;'])
+        .concat([
+          'Class rb_cToken;',
+          'Class rb_cParser;',
+          'Class rb_cParseTree;',
+          'Class rb_cTerminalNode;',
+          'Class rb_cTerminalNodeImpl;'
+        ])
         .join("\n")
     end
 
@@ -133,9 +178,21 @@ module Antlr4Native
 
         <<~END
           template <>
+          Object to_ruby<Token*>(Token* const &x) {
+            if (!x) return Nil;
+            return Data_Object<Token>(x, rb_cToken, nullptr, nullptr);
+          }
+
+          template <>
           Object to_ruby<tree::ParseTree*>(tree::ParseTree* const &x) {
             if (!x) return Nil;
             return Data_Object<tree::ParseTree>(x, rb_cParseTree, nullptr, nullptr);
+          }
+
+          template <>
+          Object to_ruby<tree::TerminalNode*>(tree::TerminalNode* const &x) {
+            if (!x) return Nil;
+            return Data_Object<tree::TerminalNode>(x, rb_cTerminalNode, nullptr, nullptr);
           }
 
           #{context_conversions}
@@ -144,9 +201,7 @@ module Antlr4Native
     end
 
     def proxy_class_methods
-      @proxy_class_methods ||= contexts
-        .flat_map(&:proxy_class_methods)
-        .join("\n")
+      @proxy_class_methods ||= contexts.flat_map(&:proxy_class_methods).join("\n")
     end
 
     def parser_class
@@ -221,6 +276,10 @@ module Antlr4Native
         void Init_#{ext_name}() {
           Module rb_m#{parser_ns} = define_module("#{parser_ns}");
 
+          rb_cToken = rb_m#{parser_ns}
+            .define_class<Token>("Token")
+            .define_method("text", &Token::getText);
+
           rb_cParser = rb_m#{parser_ns}
             .define_class<ParserProxy>("Parser")
             .define_singleton_method("parse", &ParserProxy::parse)
@@ -231,6 +290,16 @@ module Antlr4Native
             .define_class<tree::ParseTree>("ParseTree");
 
           rb_m#{parser_ns}
+            .define_class<ContextProxy>("Context")
+            .define_method("children", &ContextProxy::getChildren)
+            .define_method("child_count", &ContextProxy::childCount)
+            .define_method("text", &ContextProxy::getText)
+            .define_method("parent", &ContextProxy::getParent);
+
+          rb_cTerminalNode = rb_mPython3Parser
+            .define_class<TerminalNodeProxy, ContextProxy>("TerminalNodeImpl");
+
+          rb_m#{parser_ns}
             .define_class<#{visitor_generator.cpp_class_name}>("#{visitor_generator.class_name}")
             .define_director<#{visitor_generator.cpp_class_name}>()
             .define_constructor(Constructor<#{visitor_generator.cpp_class_name}, Object>())
@@ -238,12 +307,32 @@ module Antlr4Native
             .define_method("visit_children", &#{visitor_generator.cpp_class_name}::ruby_visitChildren)
         #{visitor_generator.visitor_proxy_methods('    ').join("\n")};
 
-          rb_m#{parser_ns}
-            .define_class<ContextProxy>("Context");
-
         #{class_wrappers_str('  ')}
         }
       END
+    end
+
+    def context_proxy_methods
+      @context_proxy_methods ||= begin
+        wrapper_branches = contexts.flat_map.with_index do |context, idx|
+          [
+            "  #{idx == 0 ? 'if' : 'else if'} (antlrcpp::is<#{parser_ns}::#{context.name}*>(node)) {",
+            "    #{context.name}Proxy proxy((#{parser_ns}::#{context.name}*)node);",
+            "    return to_ruby(proxy);",
+            "  }"
+          ]
+        end
+
+        <<~END
+          Object ContextProxy::wrapParseTree(tree::ParseTree* node) {
+          #{wrapper_branches.join("\n")}
+            else if (antlrcpp::is<tree::TerminalNodeImpl*>(node)) {
+              TerminalNodeProxy proxy(node);
+              return to_ruby(proxy);
+            }
+          }
+        END
+      end
     end
 
     def class_wrappers_str(indent)
