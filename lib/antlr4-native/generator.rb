@@ -80,6 +80,8 @@ module Antlr4Native
         using namespace Rice;
         using namespace antlr4;
 
+        #{proxy_class_declarations}
+
         class ContextProxy {
         public:
           ContextProxy(tree::ParseTree* orig) {
@@ -94,24 +96,32 @@ module Antlr4Native
             return orig -> getText();
           }
 
-          Object getChildren() {
-            Array a;
+          Array getChildren() {
+            if (children == nullptr) {
+              children = new Array();
 
-            if (orig != nullptr) {
-              for (auto it = orig -> children.begin(); it != orig -> children.end(); it ++) {
-                a.push(ContextProxy::wrapParseTree(*it));
+              if (orig != nullptr) {
+                for (auto it = orig -> children.begin(); it != orig -> children.end(); it ++) {
+                  Object parseTree = ContextProxy::wrapParseTree(*it);
+
+                  if (parseTree != Nil) {
+                    children -> push(parseTree);
+                  }
+                }
               }
             }
 
-            return a;
+            return *children;
           }
 
           Object getParent() {
-            if (orig == nullptr) {
-              return Qnil;
+            if (parent == Nil) {
+              if (orig != nullptr) {
+                parent = ContextProxy::wrapParseTree(orig -> parent);
+              }
             }
 
-            return ContextProxy::wrapParseTree(orig -> parent);
+            return parent;
           }
 
           size_t childCount() {
@@ -119,7 +129,15 @@ module Antlr4Native
               return 0;
             }
 
-            return orig -> children.size();
+            return getChildren().size();
+          }
+
+          bool doubleEquals(Object other) {
+            if (other.is_a(rb_cContextProxy)) {
+              return from_ruby<ContextProxy*>(other) -> getOriginal() == getOriginal();
+            } else {
+              return false;
+            }
           }
 
         private:
@@ -128,6 +146,8 @@ module Antlr4Native
 
         protected:
           tree::ParseTree* orig = nullptr;
+          Array* children = nullptr;
+          Object parent = Nil;
         };
 
         class TerminalNodeProxy : public ContextProxy {
@@ -136,8 +156,6 @@ module Antlr4Native
         };
 
         #{proxy_class_headers}
-
-        #{proxy_class_declarations}
 
         #{conversions}
 
@@ -167,7 +185,7 @@ module Antlr4Native
           'Class rb_cParser;',
           'Class rb_cParseTree;',
           'Class rb_cTerminalNode;',
-          'Class rb_cTerminalNodeImpl;'
+          'Class rb_cContextProxy;'
         ])
         .join("\n")
     end
@@ -289,12 +307,13 @@ module Antlr4Native
           rb_cParseTree = rb_m#{parser_ns}
             .define_class<tree::ParseTree>("ParseTree");
 
-          rb_m#{parser_ns}
+          rb_cContextProxy = rb_m#{parser_ns}
             .define_class<ContextProxy>("Context")
             .define_method("children", &ContextProxy::getChildren)
             .define_method("child_count", &ContextProxy::childCount)
             .define_method("text", &ContextProxy::getText)
-            .define_method("parent", &ContextProxy::getParent);
+            .define_method("parent", &ContextProxy::getParent)
+            .define_method("==", &ContextProxy::doubleEquals);
 
           rb_cTerminalNode = rb_mPython3Parser
             .define_class<TerminalNodeProxy, ContextProxy>("TerminalNodeImpl");
@@ -329,6 +348,8 @@ module Antlr4Native
             else if (antlrcpp::is<tree::TerminalNodeImpl*>(node)) {
               TerminalNodeProxy proxy(node);
               return to_ruby(proxy);
+            } else {
+              return Nil;
             }
           }
         END

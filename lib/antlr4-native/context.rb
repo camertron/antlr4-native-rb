@@ -104,8 +104,13 @@ module Antlr4Native
                 return Qnil;
               }
 
-              #{return_proxy_type} proxy(ctx);
-              return to_ruby(proxy);
+              for (auto child : getChildren()) {
+                if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+                  return child;
+                }
+              }
+
+              return Nil;
             }
           END
         end
