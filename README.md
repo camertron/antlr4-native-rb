@@ -28,7 +28,7 @@ generator = Antlr4Native::Generator.new(
 generator.generate
 ```
 
-In the example above, the output directory is set to the standard Ruby native extensions directory, 'ext'. Antlr4-native will generate code into ext/<name>, where <name> is the name of the parser as defined in the grammar file(s). In this case, PythonParser.g4 contains:
+In the example above, the output directory is set to the standard Ruby native extensions directory, 'ext'. Antlr4-native will generate code into ext/\<name\>, where \<name\> is the name of the parser as defined in the grammar file(s). In this case, PythonParser.g4 contains:
 
 ```antlr
 parser grammar Python3Parser;
