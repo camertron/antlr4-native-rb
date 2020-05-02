@@ -40,7 +40,7 @@ Finally, the `parser_root_method` option tells antlr4-native which context repre
 
 ## Using extensions in Ruby
 
-Parsers contain several methods for parsing source code. Use `#parse` to parse a string and `parse_file` to parse the contents of a file:
+Parsers contain several methods for parsing source code. Use `#parse` to parse a string and `#parse_file` to parse the contents of a file:
 
 
 ```ruby
@@ -76,6 +76,16 @@ end
 Make sure to always call `#visit_children` at some point in your `visit_*` methods. If you don't, the subtree under the current context won't get visited.
 
 Finally, if you override `#initialize` in your visitor subclasses, don't forget to call `super`. If you don't, you'll get a nice big segfault.
+
+## Caveats
+
+1. Avoid retaining references to contexts, tokens, etc anywhere in your Ruby code. Contexts (i.e. the `ctx` variables in the examples above) and other objects that are created by ANTLR's C++ runtime are automatically cleaned up without the Ruby interpreter's knowledge. You'll almost surely see a segfault if you retain a reference to one of these objects and try to use it after the call to `Parser#visit`.
+2. Due to an ANTLR limitation, parsers cannot be used in a multi-threaded environment, even if each parser instance is used entirely in the context of a single thread (i.e. parsers are not shared between threads). According to the ANTLR C++ developers, parsers should be threadsafe. Unfortunately firsthand experience has proven otherwise. Your mileage may vary.
+
+## System Requirements
+
+* A Java runtime (version 1.6 or higher) is required to generate the parser.
+* Ruby >= 2.3.
 
 ## License
 
