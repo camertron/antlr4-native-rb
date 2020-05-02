@@ -11,7 +11,6 @@ Gem::Specification.new do |s|
   s.description = s.summary = 'Create a Ruby native extension from any ANTLR4 grammar.'
 
   s.platform = Gem::Platform::RUBY
-  s.has_rdoc = true
 
   s.require_path = 'lib'
   s.files = Dir['{lib,spec,vendor}/**/*', 'Gemfile', 'README.md', 'Rakefile', 'antlr4-native.gemspec']
