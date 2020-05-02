@@ -85,12 +85,13 @@ Finally, if you override `#initialize` in your visitor subclasses, don't forget 
 
 ## System Requirements
 
-* A Java runtime (version 1.6 or higher) is required to generate parsers, since ANTLR is a Java tool. The ANTLR .jar file is distributed inside the antlr4-native gem, so there's no need to download it separately.
+* A Java runtime (version 1.6 or higher) is required to generate parsers, since ANTLR is a Java tool. The ANTLR .jar file is distributed inside the antlr4-native gem, so there's no need to download it separately. You can download a Java runtime [here](https://www.java.com/en/download/).
 * Ruby >= 2.3.
+* A C compiler (like gcc or clang) that supports C++14. If Ruby is working on your machine then you likely already have this.
 
 ## License
 
-Licensed under the MIT license. See LICENSE for details.
+Licensed under the MIT license. See LICENSE.txt for details.
 
 ## Authors
 
