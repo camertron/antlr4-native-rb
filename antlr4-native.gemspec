@@ -14,5 +14,5 @@ Gem::Specification.new do |s|
   s.has_rdoc = true
 
   s.require_path = 'lib'
-  s.files = Dir['{lib,spec}/**/*', 'Gemfile', 'README.md', 'Rakefile', 'antlr4-native.gemspec']
+  s.files = Dir['{lib,spec,vendor}/**/*', 'Gemfile', 'README.md', 'Rakefile', 'antlr4-native.gemspec']
 end

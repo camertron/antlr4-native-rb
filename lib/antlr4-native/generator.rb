@@ -315,7 +315,7 @@ module Antlr4Native
             .define_method("parent", &ContextProxy::getParent)
             .define_method("==", &ContextProxy::doubleEquals);
 
-          rb_cTerminalNode = rb_mPython3Parser
+          rb_cTerminalNode = rb_m#{parser_ns}
             .define_class<TerminalNodeProxy, ContextProxy>("TerminalNodeImpl");
 
           rb_m#{parser_ns}
