@@ -82,6 +82,24 @@ module Antlr4Native
 
         #{proxy_class_declarations}
 
+        template <>
+        Object to_ruby<Token*>(Token* const &x) {
+          if (!x) return Nil;
+          return Data_Object<Token>(x, rb_cToken, nullptr, nullptr);
+        }
+
+        template <>
+        Object to_ruby<tree::ParseTree*>(tree::ParseTree* const &x) {
+          if (!x) return Nil;
+          return Data_Object<tree::ParseTree>(x, rb_cParseTree, nullptr, nullptr);
+        }
+
+        template <>
+        Object to_ruby<tree::TerminalNode*>(tree::TerminalNode* const &x) {
+          if (!x) return Nil;
+          return Data_Object<tree::TerminalNode>(x, rb_cTerminalNode, nullptr, nullptr);
+        }
+
         class ContextProxy {
         public:
           ContextProxy(tree::ParseTree* orig) {
@@ -94,6 +112,18 @@ module Antlr4Native
 
           std::string getText() {
             return orig -> getText();
+          }
+
+          Object getStart() {
+            auto token = ((ParserRuleContext*) orig) -> getStart();
+
+            return to_ruby(token);
+          }
+
+          Object getStop() {
+            auto token = ((ParserRuleContext*) orig) -> getStop();
+
+            return to_ruby(token);
           }
 
           Array getChildren() {
@@ -191,31 +221,7 @@ module Antlr4Native
     end
 
     def conversions
-      @conversions ||= begin
-        context_conversions = contexts.map(&:conversions).join("\n")
-
-        <<~END
-          template <>
-          Object to_ruby<Token*>(Token* const &x) {
-            if (!x) return Nil;
-            return Data_Object<Token>(x, rb_cToken, nullptr, nullptr);
-          }
-
-          template <>
-          Object to_ruby<tree::ParseTree*>(tree::ParseTree* const &x) {
-            if (!x) return Nil;
-            return Data_Object<tree::ParseTree>(x, rb_cParseTree, nullptr, nullptr);
-          }
-
-          template <>
-          Object to_ruby<tree::TerminalNode*>(tree::TerminalNode* const &x) {
-            if (!x) return Nil;
-            return Data_Object<tree::TerminalNode>(x, rb_cTerminalNode, nullptr, nullptr);
-          }
-
-          #{context_conversions}
-        END
-      end
+      @conversions ||= contexts.map(&:conversions).join("\n")
     end
 
     def proxy_class_methods
@@ -296,7 +302,9 @@ module Antlr4Native
 
           rb_cToken = rb_m#{parser_ns}
             .define_class<Token>("Token")
-            .define_method("text", &Token::getText);
+            .define_method("text", &Token::getText)
+            .define_method("channel", &Token::getChannel)
+            .define_method("token_index", &Token::getTokenIndex);
 
           rb_cParser = rb_m#{parser_ns}
             .define_class<ParserProxy>("Parser")
@@ -312,6 +320,8 @@ module Antlr4Native
             .define_method("children", &ContextProxy::getChildren)
             .define_method("child_count", &ContextProxy::childCount)
             .define_method("text", &ContextProxy::getText)
+            .define_method("start", &ContextProxy::getStart)
+            .define_method("stop", &ContextProxy::getStop)
             .define_method("parent", &ContextProxy::getParent)
             .define_method("==", &ContextProxy::doubleEquals);
 
