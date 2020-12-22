@@ -63,7 +63,7 @@ module Antlr4Native
 
     def interop_code
       <<~END
-        #include "iostream"
+        #include <iostream>
 
         #include "antlr4-runtime.h"
 
@@ -75,6 +75,14 @@ module Antlr4Native
         #include "rice/Class.hpp"
         #include "rice/Constructor.hpp"
         #include "rice/Director.hpp"
+
+        #ifdef _WIN32
+        #undef FALSE
+        #undef TRUE
+        #undef OPTIONAL
+        #undef IN
+        #undef OUT
+        #endif
 
         using namespace std;
         using namespace Rice;
