@@ -249,6 +249,13 @@ module Antlr4Native
             return parser;
           }
 
+          Object #{parser_root_method}() {
+            auto ctx = this -> parser -> #{parser_root_method}();
+
+            #{capitalize(parser_root_method)}ContextProxy proxy((#{parser_ns}::#{capitalize(parser_root_method)}Context*) ctx);
+            return to_ruby(proxy);
+          }
+
           Object visit(VisitorProxy* visitor) {
             auto result = visitor -> visit(this -> parser -> #{parser_root_method}());
 
@@ -310,6 +317,7 @@ module Antlr4Native
             .define_class<ParserProxy>("Parser")
             .define_singleton_method("parse", &ParserProxy::parse)
             .define_singleton_method("parse_file", &ParserProxy::parseFile)
+            .define_method("#{parser_root_method}", &ParserProxy::#{parser_root_method})
             .define_method("visit", &ParserProxy::visit);
 
           rb_cParseTree = rb_m#{parser_ns}
