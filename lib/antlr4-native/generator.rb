@@ -243,14 +243,14 @@ module Antlr4Native
             return parser;
           }
 
-          VALUE visit(VisitorProxy* visitor) {
-            visitor -> visit(this -> parser -> #{parser_root_method}());
+          Object visit(VisitorProxy* visitor) {
+            auto result = visitor -> visit(this -> parser -> #{parser_root_method}());
 
             // reset for the next visit call
             this -> lexer -> reset();
             this -> parser -> reset();
 
-            return Qnil;
+            return result;
           }
 
           ~ParserProxy() {

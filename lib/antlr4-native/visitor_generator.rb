@@ -46,13 +46,13 @@ module Antlr4Native
           #{cpp_class_name}(Object self) : Director(self) { }
 
           Object ruby_visit(ContextProxy* proxy) {
-            visit(proxy -> getOriginal());
-            return Nil;
+            auto result = visit(proxy -> getOriginal());
+            return result.as<Object>();
           }
 
           Object ruby_visitChildren(ContextProxy* proxy) {
-            visitChildren(proxy -> getOriginal());
-            return Nil;
+            auto result = visitChildren(proxy -> getOriginal());
+            return result.as<Object>();
           }
 
         #{vms.join("\n")}
