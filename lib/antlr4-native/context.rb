@@ -148,6 +148,11 @@ module Antlr4Native
               }
 
               auto token = ((#{parser_ns}::#{name}*)orig) -> #{token_mtd.name}(#{params});
+
+              if (token == nullptr) {
+                return Qnil;
+              }
+
               TerminalNodeProxy proxy(token);
               return to_ruby(proxy);
             }
