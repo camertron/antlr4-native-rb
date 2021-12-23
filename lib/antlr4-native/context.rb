@@ -51,16 +51,24 @@ module Antlr4Native
 
     def conversions
       @class_conversions ||= <<~END
-        template <>
-        Object to_ruby<#{parser_ns}::#{name}*>(#{parser_ns}::#{name}* const &x) {
-          if (!x) return Nil;
-          return Data_Object<#{parser_ns}::#{name}>(x, #{proxy_class_variable}, nullptr, nullptr);
-        }
+        namespace Rice::detail {
+          template <>
+          class To_Ruby<#{parser_ns}::#{name}*> {
+          public:
+            VALUE convert(#{parser_ns}::#{name}* const &x) {
+              if (!x) return Nil;
+              return Data_Object<#{parser_ns}::#{name}>(x, false, #{proxy_class_variable});
+            }
+          };
 
-        template <>
-        Object to_ruby<#{name}Proxy*>(#{name}Proxy* const &x) {
-          if (!x) return Nil;
-          return Data_Object<#{name}Proxy>(x, #{proxy_class_variable}, nullptr, nullptr);
+          template <>
+          class To_Ruby<#{name}Proxy*> {
+          public:
+            VALUE convert(#{name}Proxy* const &x) {
+              if (!x) return Nil;
+              return Data_Object<#{name}Proxy>(x, false, #{proxy_class_variable});
+            }
+          };
         }
       END
     end
@@ -105,7 +113,7 @@ module Antlr4Native
               }
 
               for (auto child : getChildren()) {
-                if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+                if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
                   return child;
                 }
               }
@@ -134,7 +142,7 @@ module Antlr4Native
 
               for (auto it = vec.begin(); it != vec.end(); it ++) {
                 TerminalNodeProxy proxy(*it);
-                a.push(proxy);
+                a.push(detail::To_Ruby<TerminalNodeProxy>().convert(proxy));
               }
 
               return std::move(a);
@@ -154,7 +162,7 @@ module Antlr4Native
               }
 
               TerminalNodeProxy proxy(token);
-              return to_ruby(proxy);
+              return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
             }
           END
         end
@@ -164,8 +172,7 @@ module Antlr4Native
     def class_wrapper(module_var)
       @class_wrapper ||= begin
         lines = [
-          "#{proxy_class_variable} = #{module_var}",
-          ".define_class<#{name}Proxy, ContextProxy>(\"#{name}\")"
+          %(#{proxy_class_variable} = define_class_under<#{name}Proxy, ContextProxy>(#{module_var}, "#{name}"))
         ]
 
         each_context_method do |ctx_method|
