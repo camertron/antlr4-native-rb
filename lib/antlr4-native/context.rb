@@ -88,7 +88,7 @@ module Antlr4Native
                 }
               }
 
-              return a;
+              return std::move(a);
             }
           END
         else
@@ -127,7 +127,7 @@ module Antlr4Native
               Array a;
 
               if (orig == nullptr) {
-                return a;
+                return std::move(a);
               }
 
               auto vec = ((#{parser_ns}::#{name}*)orig) -> #{token_mtd.name}(#{params});
@@ -137,7 +137,7 @@ module Antlr4Native
                 a.push(proxy);
               }
 
-              return a;
+              return std::move(a);
             }
           END
         else
