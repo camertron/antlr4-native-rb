@@ -65,24 +65,25 @@ module Antlr4Native
       <<~END
         #include <iostream>
 
-        #include "antlr4-runtime.h"
+        #include <antlr4-runtime.h>
 
-        #include "#{parser_ns}.h"
-        #include "#{antlr_ns}BaseVisitor.h"
-        #include "#{lexer_ns}.h"
+        #include "antlrgen/#{parser_ns}.h"
+        #include "antlrgen/#{antlr_ns}BaseVisitor.h"
+        #include "antlrgen/#{lexer_ns}.h"
 
-        #include "rice/Array.hpp"
-        #include "rice/Class.hpp"
-        #include "rice/Constructor.hpp"
-        #include "rice/Director.hpp"
+        #include <rice/rice.hpp>
+        #include <rice/stl.hpp>
 
         #ifdef _WIN32
-        #undef FALSE
-        #undef TRUE
         #undef OPTIONAL
         #undef IN
         #undef OUT
         #endif
+
+        #undef FALSE
+        #undef TRUE
+
+        #undef TYPE
 
         using namespace std;
         using namespace Rice;
@@ -90,22 +91,33 @@ module Antlr4Native
 
         #{proxy_class_declarations}
 
-        template <>
-        Object to_ruby<Token*>(Token* const &x) {
-          if (!x) return Nil;
-          return Data_Object<Token>(x, rb_cToken, nullptr, nullptr);
-        }
+        namespace Rice::detail {
+          template <>
+          class To_Ruby<Token*> {
+          public:
+            VALUE convert(Token* const &x) {
+              if (!x) return Nil;
+              return Data_Object<Token>(x, false, rb_cToken);
+            }
+          };
 
-        template <>
-        Object to_ruby<tree::ParseTree*>(tree::ParseTree* const &x) {
-          if (!x) return Nil;
-          return Data_Object<tree::ParseTree>(x, rb_cParseTree, nullptr, nullptr);
-        }
+          template <>
+          class To_Ruby<tree::ParseTree*> {
+          public:
+            VALUE convert(tree::ParseTree* const &x) {
+              if (!x) return Nil;
+              return Data_Object<tree::ParseTree>(x, false, rb_cParseTree);
+            }
+          };
 
-        template <>
-        Object to_ruby<tree::TerminalNode*>(tree::TerminalNode* const &x) {
-          if (!x) return Nil;
-          return Data_Object<tree::TerminalNode>(x, rb_cTerminalNode, nullptr, nullptr);
+          template <>
+          class To_Ruby<tree::TerminalNode*> {
+          public:
+            VALUE convert(tree::TerminalNode* const &x) {
+              if (!x) return Nil;
+              return Data_Object<tree::TerminalNode>(x, false, rb_cTerminalNode);
+            }
+          };
         }
 
         class ContextProxy {
@@ -125,13 +137,13 @@ module Antlr4Native
           Object getStart() {
             auto token = ((ParserRuleContext*) orig) -> getStart();
 
-            return to_ruby(token);
+            return detail::To_Ruby<Token*>().convert(token);
           }
 
           Object getStop() {
             auto token = ((ParserRuleContext*) orig) -> getStop();
 
-            return to_ruby(token);
+            return detail::To_Ruby<Token*>().convert(token);
           }
 
           Array getChildren() {
@@ -172,7 +184,7 @@ module Antlr4Native
 
           bool doubleEquals(Object other) {
             if (other.is_a(rb_cContextProxy)) {
-              return from_ruby<ContextProxy*>(other) -> getOriginal() == getOriginal();
+              return detail::From_Ruby<ContextProxy*>().convert(other) -> getOriginal() == getOriginal();
             } else {
               return false;
             }
@@ -192,6 +204,7 @@ module Antlr4Native
         public:
           TerminalNodeProxy(tree::ParseTree* tree) : ContextProxy(tree) { }
         };
+
 
         #{proxy_class_headers}
 
@@ -261,7 +274,7 @@ module Antlr4Native
             auto ctx = this -> parser -> #{parser_root_method}();
 
             #{capitalize(parser_root_method)}ContextProxy proxy((#{parser_ns}::#{capitalize(parser_root_method)}Context*) ctx);
-            return to_ruby(proxy);
+            return detail::To_Ruby<#{capitalize(parser_root_method)}ContextProxy>().convert(proxy);
           }
 
           Object visit(VisitorProxy* visitor) {
@@ -301,10 +314,15 @@ module Antlr4Native
           #{parser_ns}* parser;
         };
 
-        template <>
-        Object to_ruby<ParserProxy*>(ParserProxy* const &x) {
-          if (!x) return Nil;
-          return Data_Object<ParserProxy>(x, rb_cParser, nullptr, nullptr);
+        namespace Rice::detail {
+          template <>
+          class To_Ruby<ParserProxy*> {
+          public:
+            VALUE convert(ParserProxy* const &x) {
+              if (!x) return Nil;
+              return Data_Object<ParserProxy>(x, false, rb_cParser);
+            }
+          };
         }
       END
     end
@@ -315,24 +333,14 @@ module Antlr4Native
         void Init_#{ext_name}() {
           Module rb_m#{parser_ns} = define_module("#{parser_ns}");
 
-          rb_cToken = rb_m#{parser_ns}
-            .define_class<Token>("Token")
+          rb_cToken = define_class_under<Token>(rb_m#{parser_ns}, "Token")
             .define_method("text", &Token::getText)
             .define_method("channel", &Token::getChannel)
             .define_method("token_index", &Token::getTokenIndex);
 
-          rb_cParser = rb_m#{parser_ns}
-            .define_class<ParserProxy>("Parser")
-            .define_singleton_method("parse", &ParserProxy::parse)
-            .define_singleton_method("parse_file", &ParserProxy::parseFile)
-            .define_method("#{parser_root_method}", &ParserProxy::#{parser_root_method})
-            .define_method("visit", &ParserProxy::visit);
+          rb_cParseTree = define_class_under<tree::ParseTree>(rb_m#{parser_ns}, "ParseTree");
 
-          rb_cParseTree = rb_m#{parser_ns}
-            .define_class<tree::ParseTree>("ParseTree");
-
-          rb_cContextProxy = rb_m#{parser_ns}
-            .define_class<ContextProxy>("Context")
+          rb_cContextProxy = define_class_under<ContextProxy>(rb_m#{parser_ns}, "Context")
             .define_method("children", &ContextProxy::getChildren)
             .define_method("child_count", &ContextProxy::childCount)
             .define_method("text", &ContextProxy::getText)
@@ -341,16 +349,20 @@ module Antlr4Native
             .define_method("parent", &ContextProxy::getParent)
             .define_method("==", &ContextProxy::doubleEquals);
 
-          rb_cTerminalNode = rb_m#{parser_ns}
-            .define_class<TerminalNodeProxy, ContextProxy>("TerminalNodeImpl");
+          rb_cTerminalNode = define_class_under<TerminalNodeProxy, ContextProxy>(rb_m#{parser_ns}, "TerminalNodeImpl");
 
-          rb_m#{parser_ns}
-            .define_class<#{visitor_generator.cpp_class_name}>("#{visitor_generator.class_name}")
+          define_class_under<#{antlr_ns}BaseVisitor>(rb_m#{parser_ns}, "#{visitor_generator.class_name}")
             .define_director<#{visitor_generator.cpp_class_name}>()
             .define_constructor(Constructor<#{visitor_generator.cpp_class_name}, Object>())
             .define_method("visit", &#{visitor_generator.cpp_class_name}::ruby_visit)
             .define_method("visit_children", &#{visitor_generator.cpp_class_name}::ruby_visitChildren)
         #{visitor_generator.visitor_proxy_methods('    ').join("\n")};
+
+          rb_cParser = define_class_under<ParserProxy>(rb_m#{parser_ns}, "Parser")
+            .define_singleton_function("parse", &ParserProxy::parse)
+            .define_singleton_function("parse_file", &ParserProxy::parseFile)
+            .define_method("#{parser_root_method}", &ParserProxy::#{parser_root_method})
+            .define_method("visit", &ParserProxy::visit);
 
         #{class_wrappers_str('  ')}
         }
@@ -363,7 +375,7 @@ module Antlr4Native
           [
             "  #{idx == 0 ? 'if' : 'else if'} (antlrcpp::is<#{parser_ns}::#{context.name}*>(node)) {",
             "    #{context.name}Proxy proxy((#{parser_ns}::#{context.name}*)node);",
-            "    return to_ruby(proxy);",
+            "    return detail::To_Ruby<#{context.name}Proxy>().convert(proxy);",
             "  }"
           ]
         end
@@ -373,7 +385,7 @@ module Antlr4Native
           #{wrapper_branches.join("\n")}
             else if (antlrcpp::is<tree::TerminalNodeImpl*>(node)) {
               TerminalNodeProxy proxy(node);
-              return to_ruby(proxy);
+              return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
             } else {
               return Nil;
             }
