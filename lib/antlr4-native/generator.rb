@@ -147,38 +147,24 @@ module Antlr4Native
           }
 
           Array getChildren() {
-            if (children == nullptr) {
-              children = new Array();
+            Array children;
+            if (orig != nullptr) {
+              for (auto it = orig -> children.begin(); it != orig -> children.end(); it ++) {
+                Object parseTree = ContextProxy::wrapParseTree(*it);
 
-              if (orig != nullptr) {
-                for (auto it = orig -> children.begin(); it != orig -> children.end(); it ++) {
-                  Object parseTree = ContextProxy::wrapParseTree(*it);
-
-                  if (parseTree != Nil) {
-                    children -> push(parseTree);
-                  }
+                if (parseTree != Nil) {
+                  children.push(parseTree);
                 }
               }
             }
-
-            return *children;
+            return children;
           }
 
           Object getParent() {
-            if (parent == Nil) {
-              if (orig != nullptr) {
-                parent = ContextProxy::wrapParseTree(orig -> parent);
-              }
-            }
-
-            return parent;
+            return orig == nullptr ? Nil : ContextProxy::wrapParseTree(orig -> parent);
           }
 
           size_t childCount() {
-            if (orig == nullptr) {
-              return 0;
-            }
-
             return getChildren().size();
           }
 
@@ -196,8 +182,6 @@ module Antlr4Native
 
         protected:
           tree::ParseTree* orig = nullptr;
-          Array* children = nullptr;
-          Object parent = Nil;
         };
 
         class TerminalNodeProxy : public ContextProxy {
@@ -361,8 +345,8 @@ module Antlr4Native
           rb_cParser = define_class_under<ParserProxy>(rb_m#{parser_ns}, "Parser")
             .define_singleton_function("parse", &ParserProxy::parse)
             .define_singleton_function("parse_file", &ParserProxy::parseFile)
-            .define_method("#{parser_root_method}", &ParserProxy::#{parser_root_method})
-            .define_method("visit", &ParserProxy::visit);
+            .define_method("#{parser_root_method}", &ParserProxy::#{parser_root_method}, Return().keepAlive())
+            .define_method("visit", &ParserProxy::visit, Return().keepAlive());
 
         #{class_wrappers_str('  ')}
         }
