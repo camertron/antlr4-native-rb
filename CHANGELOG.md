@@ -1,3 +1,8 @@
+## 2.0.1
+* Address segfaults for enhanced stability (#11, @maxirmx)
+  - Return a copy of children from `getChildren()` calls instead of a reference.
+  - Add `Return().keepAlive()` to several key methods to prevent the ANTLR parser, tokens, lexer, etc from being destroyed if the Ruby interpreter holds a reference to them.
+
 ## 2.0.0
 * Upgrade to Rice v4 (#8, @lutaml)
 
