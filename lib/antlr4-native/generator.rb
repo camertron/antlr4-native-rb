@@ -2,10 +2,10 @@ require 'fileutils'
 
 module Antlr4Native
   class Generator
-    ANTLR_VERSION = '4.8'.freeze
+    ANTLR_VERSION = '4.10.1'.freeze
 
     ANTLR_JAR = File.expand_path(
-      File.join('..', '..', 'vendor', 'antlr4-4.8-1-complete.jar'), __dir__
+      File.join('..', '..', 'vendor', "antlr-#{ANTLR_VERSION}-complete.jar"), __dir__
     ).freeze
 
     include StringHelpers
@@ -16,6 +16,7 @@ module Antlr4Native
       @grammar_files = grammar_files
       @output_dir = output_dir
       @parser_root_method = parser_root_method
+
     end
 
     def generate
@@ -268,7 +269,7 @@ module Antlr4Native
             this -> lexer -> reset();
             this -> parser -> reset();
 
-            return result;
+            return std::any_cast<Object>(result);
           }
 
           ~ParserProxy() {

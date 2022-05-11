@@ -48,7 +48,7 @@ module Antlr4Native
           Object ruby_visit(ContextProxy* proxy) {
             auto result = visit(proxy -> getOriginal());
             try {
-              return result.as<Object>();
+              return std::any_cast<Object>(result);
             } catch(std::bad_cast) {
               return Qnil;
             }
@@ -57,7 +57,7 @@ module Antlr4Native
           Object ruby_visitChildren(ContextProxy* proxy) {
             auto result = visitChildren(proxy -> getOriginal());
             try {
-              return result.as<Object>();
+              return std::any_cast<Object>(result);
             } catch(std::bad_cast) {
               return Qnil;
             }
