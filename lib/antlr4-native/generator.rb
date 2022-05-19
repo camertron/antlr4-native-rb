@@ -25,7 +25,7 @@ module Antlr4Native
     end
 
     def gem_name
-      @gem_name ||= dasherize(parser_ns)
+      @gem_name ||= underscore(parser_ns)
     end
 
     def antlr_ns
@@ -316,7 +316,7 @@ module Antlr4Native
       <<~END
         extern "C"
         void Init_#{ext_name}() {
-          Module rb_m#{parser_ns} = define_module("#{parser_ns}");
+          Module rb_m#{parser_ns} = define_module("#{capitalize(parser_ns)}");
 
           rb_cToken = define_class_under<Token>(rb_m#{parser_ns}, "Token")
             .define_method("text", &Token::getText)
