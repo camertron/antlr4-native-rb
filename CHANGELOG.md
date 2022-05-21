@@ -1,3 +1,6 @@
+## 2.2.0
+* Use underscores in gem names instead of dashes (@dsisnero, #14)
+
 ## 2.1.0
 * Upgrade to ANTLR 4.10 (#13, @maxirmx)
 
