@@ -1,0 +1,10 @@
+Gemfile.lock
+pkg/
+*.o
+*.o.tmp
+ext/lua_parser/Makefile
+ext/lua_parser/mkmf.log
+*.bundle
+lua_parser.cpp
+lua_parser.bundle
+lua_parser.so

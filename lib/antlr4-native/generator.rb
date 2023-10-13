@@ -346,8 +346,8 @@ module Antlr4Native
           rb_cParser = define_class_under<ParserProxy>(rb_m#{parser_ns}, "Parser")
             .define_singleton_function("parse", &ParserProxy::parse)
             .define_singleton_function("parse_file", &ParserProxy::parseFile)
-            .define_method("#{parser_root_method}", &ParserProxy::#{parser_root_method}, Return().keepAlive())
-            .define_method("visit", &ParserProxy::visit, Return().keepAlive());
+            .define_method("#{parser_root_method}", &ParserProxy::#{parser_root_method})
+            .define_method("visit", &ParserProxy::visit);
 
         #{class_wrappers_str('  ')}
         }
