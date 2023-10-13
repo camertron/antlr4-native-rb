@@ -13,5 +13,7 @@ jobs:
         with:
           ruby-version: ${{ matrix.ruby-version }}
           bundler-cache: true
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
       - name: Run Lua Parser Smoke Test
         run: ./spec/run-lua-test.sh
