@@ -1,3 +1,6 @@
+## 2.2.1
+* Remove the `Return().keepAlive()` statements added in v2.0.1, as they cause segfaults for the README example.
+
 ## 2.2.0
 * Use underscores in gem names instead of dashes (@dsisnero, #14)
 

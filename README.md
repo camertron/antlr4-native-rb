@@ -79,6 +79,7 @@ Finally, if you override `#initialize` in your visitor subclasses, don't forget 
 
 ## Caveats
 
+1. Avoid retaining references to contexts, tokens, etc anywhere in your Ruby code. Contexts (i.e. the `ctx` variables in the examples above) and other objects that are created by ANTLR's C++ runtime are automatically cleaned up without the Ruby interpreter's knowledge. You'll almost surely see a segfault if you retain a reference to one of these objects and try to use it after the call to `Parser#visit`.
 1. Due to an ANTLR limitation, parsers cannot be used in a multi-threaded environment, even if each parser instance is used entirely in the context of a single thread (i.e. parsers are not shared between threads). According to the ANTLR C++ developers, parsers should be threadsafe. Unfortunately firsthand experience has proven otherwise. Your mileage may vary.
 1. The description of this gem says "(almost) any ANTLR4 grammar" because many grammars contain target-specific code. For example, the Python3 grammar referenced in the examples above contains inline Java code that the C++ compiler won't understand. You'll need to port any such code to C++ before you'll be able to compile and use the native extension.
 
