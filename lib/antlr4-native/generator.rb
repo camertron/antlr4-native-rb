@@ -97,7 +97,7 @@ module Antlr4Native
           class To_Ruby<Token*> {
           public:
             VALUE convert(Token* const &x) {
-              if (!x) return Nil;
+              if (!x) return Qnil;
               return Data_Object<Token>(x, false, rb_cToken);
             }
           };
@@ -106,7 +106,7 @@ module Antlr4Native
           class To_Ruby<tree::ParseTree*> {
           public:
             VALUE convert(tree::ParseTree* const &x) {
-              if (!x) return Nil;
+              if (!x) return Qnil;
               return Data_Object<tree::ParseTree>(x, false, rb_cParseTree);
             }
           };
@@ -115,7 +115,7 @@ module Antlr4Native
           class To_Ruby<tree::TerminalNode*> {
           public:
             VALUE convert(tree::TerminalNode* const &x) {
-              if (!x) return Nil;
+              if (!x) return Qnil;
               return Data_Object<tree::TerminalNode>(x, false, rb_cTerminalNode);
             }
           };
@@ -299,16 +299,18 @@ module Antlr4Native
           #{parser_ns}* parser;
         };
 
+        /*
         namespace Rice::detail {
           template <>
           class To_Ruby<ParserProxy*> {
           public:
             VALUE convert(ParserProxy* const &x) {
-              if (!x) return Nil;
+              if (!x) return Qnil;
               return Data_Object<ParserProxy>(x, false, rb_cParser);
             }
           };
         }
+        */
       END
     end
 
@@ -372,7 +374,7 @@ module Antlr4Native
               TerminalNodeProxy proxy(node);
               return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
             } else {
-              return Nil;
+              return Qnil;
             }
           }
         END
