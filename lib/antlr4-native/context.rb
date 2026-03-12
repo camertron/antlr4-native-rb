@@ -114,7 +114,7 @@ module Antlr4Native
 
               for (auto child : getChildren()) {
                 if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
-                  return child;
+                  return Rice::Object(child);
                 }
               }
 

@@ -162,7 +162,7 @@ module Antlr4Native
           }
 
           Object getParent() {
-            return orig == nullptr ? Nil : ContextProxy::wrapParseTree(orig -> parent);
+            return orig == nullptr ? Rice::Object(Qnil) : ContextProxy::wrapParseTree(orig -> parent);
           }
 
           size_t childCount() {
