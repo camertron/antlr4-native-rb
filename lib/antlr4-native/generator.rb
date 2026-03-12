@@ -301,12 +301,25 @@ module Antlr4Native
 
         namespace Rice::detail {
           template <>
+          struct Type<ParserProxy*> {
+            static bool verify() {
+              return true;
+            }
+          };
+
+          template <>
           class To_Ruby<ParserProxy*> {
           public:
+            To_Ruby() = default;
+
+            explicit To_Ruby(Arg* arg) : arg_(arg) {}
+
             VALUE convert(ParserProxy* const &x) {
               if (!x) return Qnil;
               return Data_Object<ParserProxy>(x, false, rb_cParser);
             }
+          private:
+            Arg* arg_ = nullptr;
           };
         }
       END
