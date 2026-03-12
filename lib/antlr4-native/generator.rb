@@ -153,7 +153,7 @@ module Antlr4Native
               for (auto it = orig -> children.begin(); it != orig -> children.end(); it ++) {
                 Object parseTree = ContextProxy::wrapParseTree(*it);
 
-                if (parseTree != Nil) {
+                if (!parseTree.is_nil()) {
                   children.push(parseTree);
                 }
               }
@@ -299,7 +299,6 @@ module Antlr4Native
           #{parser_ns}* parser;
         };
 
-        /*
         namespace Rice::detail {
           template <>
           class To_Ruby<ParserProxy*> {
@@ -310,7 +309,6 @@ module Antlr4Native
             }
           };
         }
-        */
       END
     end
 
