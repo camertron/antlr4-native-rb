@@ -1,3 +1,6 @@
+## 2.3.0
+* Add support for Rice 4.11 (@tdoel, #18)
+
 ## 2.2.1
 * Remove the `Return().keepAlive()` statements added in v2.0.1, as they cause segfaults for the README example.
 
