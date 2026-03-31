@@ -15,5 +15,5 @@ Gem::Specification.new do |s|
   s.require_path = 'lib'
   s.files = Dir['{lib,spec,vendor}/**/*', 'Gemfile', 'README.md', 'Rakefile', 'antlr4-native.gemspec']
 
-  s.add_runtime_dependency "rice", "~> 4.0"
+  s.add_runtime_dependency "rice", "~> 4.11"
 end
