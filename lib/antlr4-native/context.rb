@@ -56,7 +56,7 @@ module Antlr4Native
           class To_Ruby<#{parser_ns}::#{name}*> {
           public:
             VALUE convert(#{parser_ns}::#{name}* const &x) {
-              if (!x) return Nil;
+              if (!x) return Qnil;
               return Data_Object<#{parser_ns}::#{name}>(x, false, #{proxy_class_variable});
             }
           };
@@ -65,7 +65,7 @@ module Antlr4Native
           class To_Ruby<#{name}Proxy*> {
           public:
             VALUE convert(#{name}Proxy* const &x) {
-              if (!x) return Nil;
+              if (!x) return Qnil;
               return Data_Object<#{name}Proxy>(x, false, #{proxy_class_variable});
             }
           };
@@ -114,11 +114,11 @@ module Antlr4Native
 
               for (auto child : getChildren()) {
                 if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
-                  return child;
+                  return Rice::Object(child);
                 }
               }
 
-              return Nil;
+              return Qnil;
             }
           END
         end

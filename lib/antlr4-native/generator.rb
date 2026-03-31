@@ -97,7 +97,7 @@ module Antlr4Native
           class To_Ruby<Token*> {
           public:
             VALUE convert(Token* const &x) {
-              if (!x) return Nil;
+              if (!x) return Qnil;
               return Data_Object<Token>(x, false, rb_cToken);
             }
           };
@@ -106,7 +106,7 @@ module Antlr4Native
           class To_Ruby<tree::ParseTree*> {
           public:
             VALUE convert(tree::ParseTree* const &x) {
-              if (!x) return Nil;
+              if (!x) return Qnil;
               return Data_Object<tree::ParseTree>(x, false, rb_cParseTree);
             }
           };
@@ -115,7 +115,7 @@ module Antlr4Native
           class To_Ruby<tree::TerminalNode*> {
           public:
             VALUE convert(tree::TerminalNode* const &x) {
-              if (!x) return Nil;
+              if (!x) return Qnil;
               return Data_Object<tree::TerminalNode>(x, false, rb_cTerminalNode);
             }
           };
@@ -153,7 +153,7 @@ module Antlr4Native
               for (auto it = orig -> children.begin(); it != orig -> children.end(); it ++) {
                 Object parseTree = ContextProxy::wrapParseTree(*it);
 
-                if (parseTree != Nil) {
+                if (!parseTree.is_nil()) {
                   children.push(parseTree);
                 }
               }
@@ -162,7 +162,7 @@ module Antlr4Native
           }
 
           Object getParent() {
-            return orig == nullptr ? Nil : ContextProxy::wrapParseTree(orig -> parent);
+            return orig == nullptr ? Rice::Object(Qnil) : ContextProxy::wrapParseTree(orig -> parent);
           }
 
           size_t childCount() {
@@ -301,12 +301,25 @@ module Antlr4Native
 
         namespace Rice::detail {
           template <>
+          struct Type<ParserProxy*> {
+            static bool verify() {
+              return true;
+            }
+          };
+
+          template <>
           class To_Ruby<ParserProxy*> {
           public:
+            To_Ruby() = default;
+
+            explicit To_Ruby(Arg* arg) : arg_(arg) {}
+
             VALUE convert(ParserProxy* const &x) {
-              if (!x) return Nil;
+              if (!x) return Qnil;
               return Data_Object<ParserProxy>(x, false, rb_cParser);
             }
+          private:
+            Arg* arg_ = nullptr;
           };
         }
       END
@@ -372,7 +385,7 @@ module Antlr4Native
               TerminalNodeProxy proxy(node);
               return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
             } else {
-              return Nil;
+              return Qnil;
             }
           }
         END
